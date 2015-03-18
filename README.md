@@ -12,7 +12,8 @@ To Do
 Dependencies
 ------------
 
- * Protocol Buffers (https://developers.google.com/protocol-buffers/)
+ * Protocol Buffers with Python Bindings (https://developers.google.com/protocol-buffers/)
+ * GFlags for Python (http://code.google.com/p/python-gflags)
 
 Instructions
 ------------
