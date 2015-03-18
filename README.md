@@ -14,6 +14,7 @@ Dependencies
 
  * Protocol Buffers with Python Bindings (https://developers.google.com/protocol-buffers/)
  * GFlags for Python (http://code.google.com/p/python-gflags)
+ * Google Data APIs Python Client Library (https://code.google.com/p/gdata-python-client/)
 
 Instructions
 ------------
