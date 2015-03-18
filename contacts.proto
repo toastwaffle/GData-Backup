@@ -1,0 +1,49 @@
+package gdatabackup;
+
+enum Type {
+    UNKNOWN = 0;
+    ASSISTANT = 1;
+    CALLBACK = 2;
+    CAR = 3;
+    COMPANY_MAIN = 4;
+    FAX = 5;
+    HOME = 6;
+    HOME_FAX = 7;
+    ISDN = 8;
+    MAIN = 9;
+    MOBILE = 10;
+    OTHER = 11;
+    OTHER_FAX = 12;
+    PAGER = 13;
+    RADIO = 14;
+    TELEX = 15;
+    TTY_TDD = 16;
+    WORK = 17;
+    WORK_FAX = 18;
+    WORK_MOBILE = 19;
+    WORK_PAGER = 20;
+}
+
+message Email {
+    optional string address = 1;
+    optional Type type = 2;
+    optional string label = 3;
+    optional bool primary = 4;
+}
+
+message Phone {
+    optional string number = 1;
+    optional Type type = 2;
+    optional string label = 3;
+    optional bool primary = 4;
+}
+
+message Contact {
+    optional string name = 1;
+    repeated Email email = 2;
+    repeated Phone phone = 3;
+}
+
+message ContactList {
+    repeated Contact contact = 1;
+}
