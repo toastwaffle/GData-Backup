@@ -1,6 +1,0 @@
-package gdatabackup;
-
-message Login {
-    required string email = 1;
-    required string password = 2;
-}

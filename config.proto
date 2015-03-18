@@ -1,0 +1,12 @@
+package gdatabackup;
+
+message Login {
+    required string email = 1;
+    required string password = 2;
+}
+
+message OAuthClient {
+    required string id = 1;
+    required string secret = 2;
+    required string public_api_key = 3;
+}

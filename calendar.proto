@@ -1,0 +1,31 @@
+package gdatabackup;
+
+message Reminder {
+    optional string method = 1;
+    optional int32 minutes = 2;
+}
+
+message Event {
+    optional string summary = 1;
+    optional string description = 2;
+    optional string start = 3;
+    optional string start_timezone = 4;
+    optional string end = 5;
+    optional string end_timezone = 6;
+    optional string location = 7;
+    optional bool use_default_reminder = 8;
+    repeated Reminder reminder = 9;
+}
+
+message Calendar {
+    optional string summary = 1;
+    optional string description = 2;
+    optional string location = 3;
+    optional string timezone = 4;
+    repeated Event event = 5;
+    repeated Reminder default_reminder = 6;
+}
+
+message CalendarList {
+    repeated Calendar calendar = 1;
+}

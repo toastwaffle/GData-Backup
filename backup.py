@@ -6,7 +6,8 @@ import sys
 
 import gflags
 
-import contacts
+import calendar_backup
+import contacts_backup
 import utils
 
 FLAGS = gflags.FLAGS
@@ -21,6 +22,11 @@ gflags.DEFINE_bool('contacts',
                    False,
                    'Whether to backup contacts',
                    short_name='c')
+
+gflags.DEFINE_bool('calendar',
+                   False,
+                   'Whether to backup calendar',
+                   short_name='a')
 
 def validate_storage_dir(path):
     try:
@@ -41,9 +47,14 @@ def main(argv):
         print '{0}\nUsage: {1} ARGS\n{2}'.format(e, sys.argv[0], FLAGS)
         sys.exit(1)
 
+    if FLAGS.calendar:
+        print 'Backing up calendar'
+        calendar_backup.do_backup(FLAGS.storage_dir)
+        print 'Finished backing up calendar'
+
     if FLAGS.contacts:
         print 'Backing up contacts'
-        contacts.do_backup(FLAGS.storage_dir)
+        contacts_backup.do_backup(FLAGS.storage_dir)
         print 'Finished backing up contacts'
 
 if __name__ == '__main__':
