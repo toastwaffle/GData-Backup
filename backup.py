@@ -44,18 +44,18 @@ def main(argv):
     try:
         argv = FLAGS(argv)  # parse flags
     except gflags.FlagsError, e:
-        print '{0}\nUsage: {1} ARGS\n{2}'.format(e, sys.argv[0], FLAGS)
+        sys.stderr.write('{0}\nUsage: {1} ARGS\n{2}'.format(e, sys.argv[0], FLAGS))
         sys.exit(1)
 
     if FLAGS.calendar:
-        print 'Backing up calendar'
+        utils.quiet_print('Backing up calendar')
         calendar_backup.do_backup(FLAGS.storage_dir)
-        print 'Finished backing up calendar'
+        utils.quiet_print('Finished backing up calendar')
 
     if FLAGS.contacts:
-        print 'Backing up contacts'
+        utils.quiet_print('Backing up contacts')
         contacts_backup.do_backup(FLAGS.storage_dir)
-        print 'Finished backing up contacts'
+        utils.quiet_print('Finished backing up contacts')
 
 if __name__ == '__main__':
     main(sys.argv)

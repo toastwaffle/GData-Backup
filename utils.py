@@ -13,6 +13,11 @@ gflags.DEFINE_string('config_dir',
                      'Alternative location of the config_dir',
                      short_name='l')
 
+gflags.DEFINE_bool('quiet',
+                   False,
+                   'Whether to suppress progress messages',
+                   short_name='q')
+
 def validate_config_dir(path):
     def resolve_path_validator(path):
         if os.path.isdir(path):
@@ -95,7 +100,7 @@ def get_oauth_client_details():
             client.ParseFromString(client_file.read())
             return client
     else:
-        print "Create an API client at https://console.developers.google.com"
+        sys.stdout.write("Create an API client at https://console.developers.google.com")
         client.id = raw_input("Enter your client ID: ")
         client.secret = getpass.getpass("Enter your client secret: ")
         client.public_api_key = getpass.getpass("Enter your public API key: ")
@@ -110,3 +115,7 @@ def get_oauth_client_details():
                 )
 
         return client
+
+def quiet_print(message):
+    if FLAGS.quiet:
+        sys.stdout.write(message)

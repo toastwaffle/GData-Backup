@@ -110,7 +110,7 @@ def do_backup(storage_dir):
 
         for calendar in calendars['items']:
             if calendar['accessRole'] == 'owner':
-                print 'Backing up {}'.format(calendar['summary'])
+                utils.quiet_print('Backing up {}'.format(calendar['summary']))
 
                 cal = calendar_list.calendar.add()
                 cal.summary = calendar['summary']
@@ -144,13 +144,13 @@ def do_backup(storage_dir):
                     for event in events['items']:
                         convert_calendar_entry_to_protobuf(event, cal)
                         count += 1
-                        sys.stdout.write('\rBacked up {} events'.format(count))
+                        utils.quiet_print('\rBacked up {} events'.format(count))
 
                     event_page_token = events.get('nextPageToken')
                     if not event_page_token:
                         break
 
-                print '' # Add newline after the counter stops counting
+                utils.quiet_print('\n') # Add newline after the counter stops counting
 
         page_token = calendars.get('nextPageToken')
         if not page_token:

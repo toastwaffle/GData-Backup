@@ -90,7 +90,7 @@ def do_backup(storage_dir):
         for entry in feed.entry:
             convert_contact_entry_to_protobuf(entry, contact_list)
             count += 1
-            sys.stdout.write('\rBacked up {} contacts'.format(count))
+            utils.quiet_print('\rBacked up {} contacts'.format(count))
 
         next_uri = feed.GetNextLink()
 
@@ -99,7 +99,7 @@ def do_backup(storage_dir):
         else:
             feed = None
 
-    print '' # Add newline after the counter stops counting
+    utils.quiet_print('\n') # Add newline after the counter stops counting
 
     contact_filename = os.path.join(
         utils.resolve_path(storage_dir, os.path.isdir),
