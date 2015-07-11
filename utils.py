@@ -1,121 +1,180 @@
-import getpass
+"""Utility functions for backing up contacts and calendars."""
+
 import os
 import sys
 
 import gflags
+import pathlib
 
-import config_pb2
+import contacts_pb2
+
 
 FLAGS = gflags.FLAGS
 
-gflags.DEFINE_string('config_dir',
-                     '~/.gdatabackup',
-                     'Alternative location of the config_dir',
-                     short_name='l')
 
-gflags.DEFINE_bool('quiet',
-                   False,
-                   'Whether to suppress progress messages',
-                   short_name='q')
+def resolve_path(path):
+    """Ensure that a directory exists.
 
-def validate_config_dir(path):
-    def resolve_path_validator(path):
-        if os.path.isdir(path):
-            return True
+    Args:
+        path: (str) A path to a directory, optionally relative or including the
+            ~ home directory expansion.
 
-        try:
-            os.mkdir(path)
-            return True
-        except OSError, e:
-            return False
+    Raises:
+        OSError: If path is nonsensical or cannot be created.
+    """
+    path_obj = pathlib.Path(os.path.expanduser(path))
 
     try:
-        resolve_path(path, resolve_path_validator)
-        return True
-    except utils.NonExistentPathError:
-        return False
+        return str(path_obj.resolve())
+    except OSError as _:
+        os.mkdir(str(path_obj))
+        return str(path_obj.resolve())
 
-gflags.RegisterValidator('config_dir',
-                         validate_config_dir,
-                         message='--config_dir must be a directory')
 
-class Error(Exception):
-    pass
+def output(message, level=0):
+    """Output a message to the console at a given verbosity level.
 
-class NonExistentPathError(Error):
-    pass
-
-def resolve_path(path, validator):
-    if validator(path):
-        return path
-
-    if path.startswith('~'):
-        if validator(os.path.expanduser(path)):
-            return os.path.expanduser(path)
-        else:
-            raise NonExistentPathError("Could not resolve path")
-
-    if validator(os.path.realpath(path)):
-        return os.path.realpath(path)
-
-    raise NonExistentPathError("Could not resolve path")
-
-def get_login_details():
-    filepath = os.path.join(
-        resolve_path(FLAGS.config_dir, os.path.isdir),
-        "login.binproto"
-    )
-
-    login = config_pb2.Login()
-
-    if filepath is not None and os.path.isfile(filepath):
-        with open(filepath, 'r') as login_file:
-            login.ParseFromString(login_file.read())
-            return login
-    else:
-        login.email = raw_input("Enter your email address: ")
-        login.password = getpass.getpass("Enter your password: ")
-
-        if filepath is not None:
-            try:
-                with open(filepath, 'w') as login_file:
-                    login_file.write(login.SerializeToString())
-            except IOError:
-                sys.stderr.write(
-                    'Could not save login credentials to {}\n'.format(filepath)
-                )
-
-        return login
-
-def get_oauth_client_details():
-    filepath = os.path.join(
-        resolve_path(FLAGS.config_dir, os.path.isdir),
-        "oauthclient.binproto"
-    )
-
-    client = config_pb2.OAuthClient()
-
-    if filepath is not None and os.path.isfile(filepath):
-        with open(filepath, 'r') as client_file:
-            client.ParseFromString(client_file.read())
-            return client
-    else:
-        sys.stdout.write("Create an API client at https://console.developers.google.com")
-        client.id = raw_input("Enter your client ID: ")
-        client.secret = getpass.getpass("Enter your client secret: ")
-        client.public_api_key = getpass.getpass("Enter your public API key: ")
-
-        if filepath is not None:
-            try:
-                with open(filepath, 'w') as client_file:
-                    client_file.write(client.SerializeToString())
-            except IOError:
-                sys.stderr.write(
-                    'Could not save client credentials to {}\n'.format(filepath)
-                )
-
-        return client
-
-def quiet_print(message):
-    if FLAGS.quiet:
+    Args:
+        message: (str) The message to output. Will not automatically insert a
+            new line.
+        level: (int) Verbosity level to output at. Higher numbers are more
+            likely to be hidden.
+    """
+    if level <= FLAGS.verbosity:
         sys.stdout.write(message)
+
+
+def contact_to_protobuf(contact, contact_list_pb):  # pylint: disable=too-many-branches
+    """Convert a contact from the Google API to our protobuf type.
+
+    Args:
+        contact: (object) Contact object returned from the Google API.
+        contact_list_pb: (contacts_pb2.ContactList) Contact list to add the
+            contact to.
+    """
+    contact_pb = contact_list_pb.contact.add()
+
+    if contact.name is not None:
+        if contact.name.full_name is not None:
+            contact_pb.name = contact.name.full_name.text
+        else:
+            name_parts = []
+
+            if contact.name.name_prefix is not None:
+                name_parts.append(contact.name.name_prefix.text)
+
+            if contact.name.given_name is not None:
+                name_parts.append(contact.name.given_name.text)
+
+            if contact.name.additional_name is not None:
+                name_parts.append(contact.name.additional_name.text)
+
+            if contact.name.family_name is not None:
+                name_parts.append(contact.name.family_name.text)
+
+            if contact.name.name_suffix is not None:
+                name_parts.append(contact.name.name_suffix.text)
+
+            contact_pb.name = " ".join(name_parts)
+    elif contact.title.text is not None:
+        contact_pb.name = contact.title.text
+
+    for email in contact.email:
+        email_pb = contact_pb.email.add()
+
+        email_pb.address = email.address
+        email_pb.primary = (email.primary == 'true')
+
+        if email.label is not None:
+            email_pb.label = email.label
+
+        try:
+            email_pb.type = contacts_pb2.Type.Value(email.rel[33:].upper())
+        except AttributeError:
+            email_pb.type = contacts_pb2.UNKNOWN
+        except TypeError:
+            email_pb.type = contacts_pb2.UNKNOWN
+
+    for phone in contact.phone_number:
+        phone_pb = contact_pb.phone.add()
+
+        phone_pb.number = phone.text
+        phone_pb.primary = (phone.primary == 'true')
+
+        if phone.label is not None:
+            phone_pb.label = phone.label
+
+        try:
+            phone_pb.type = contacts_pb2.Type.Value(phone.rel[33:].upper())
+        except AttributeError:
+            phone_pb.type = contacts_pb2.Type.UNKNOWN
+        except TypeError:
+            phone_pb.type = contacts_pb2.UNKNOWN
+
+
+def event_to_protobuf(event, calendar_pb):
+    """Convert an event from the Google API to our protobuf type.
+
+    Args:
+        event: (object) Event object returned from the Google API.
+        calendar_pb: (calendar_pb2.Calendar) Calendar to add the
+            event to.
+    """
+    event_pb = calendar_pb.event.add()
+
+    try:
+        event_pb.summary = event['summary']
+    except KeyError:
+        pass
+
+    try:
+        event_pb.description = event['description']
+    except KeyError:
+        pass
+
+    try:
+        event_pb.location = event['location']
+    except KeyError:
+        pass
+
+    try:
+        event_pb.start = event['start']['date']
+    except KeyError:
+        pass
+
+    try:
+        event_pb.start = event['start']['dateTime']
+    except KeyError:
+        pass
+
+    try:
+        event_pb.start_timezone = event['start']['timeZone']
+    except KeyError:
+        pass
+
+    if 'endTimeUnspecified' in event and not event['endTimeUnspecified']:
+        try:
+            event_pb.end = event['end']['date']
+        except KeyError:
+            pass
+
+        try:
+            event_pb.end = event['end']['dateTime']
+        except KeyError:
+            pass
+
+        try:
+            event_pb.end_timezone = event['end']['timeZone']
+        except KeyError:
+            pass
+
+    event_pb.use_default_reminder = event['reminders']['useDefault']
+
+    try:
+        for reminder in event['reminders']['overrides']:
+            event_pb.reminder.add(
+                method=reminder['method'],
+                minutes=reminder['minutes']
+            )
+    except KeyError:
+        pass
